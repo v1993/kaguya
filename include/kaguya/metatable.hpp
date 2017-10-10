@@ -109,6 +109,9 @@ inline int property_index_function(lua_State *L) {
       lua_call(L, 1, 1);
       return 1;
     }
+    else if( type == LUA_TNIL ) {
+        luaL_error( L, "accessing unknown property %s.", strkey );
+    }
   }
   lua_pushvalue(L, key);
   lua_gettable(L, metatable);
@@ -140,6 +143,9 @@ inline int property_newindex_function(lua_State *L) {
       lua_pushvalue(L, value);
       lua_call(L, 2, 0);
       return 0;
+    }
+    else if( type == LUA_TNIL ){
+        luaL_error( L, "accessing unknown property %s.", strkey );
     }
   }
   lua_pushvalue(L, key);
@@ -282,7 +288,7 @@ public:
                          "class. e.g. std::tuple");
   }
 
-  bool pushCreateMatatable(lua_State *state) const {
+  bool pushCreateMetatable(lua_State *state) const {
     if (!class_userdata::newmetatable<class_type>(state)) {
       except::OtherError(state,
                          typeid(class_type *).name() +
@@ -328,9 +334,9 @@ public:
     lua_settop(state, metatable_index);
     return true;
   }
-  LuaTable createMatatable(lua_State *state) const {
+  LuaTable createMetatable(lua_State *state) const {
     util::ScopedSavedStack save(state);
-    if (!pushCreateMatatable(state)) {
+    if (!pushCreateMetatable(state)) {
       return LuaTable();
     }
     return LuaStackRef(state, -1);
@@ -706,7 +712,7 @@ struct lua_type_traits<UserdataMetatable<T, Base> > {
   typedef const UserdataMetatable<T, Base> &push_type;
 
   static int push(lua_State *l, push_type ref) {
-    ref.pushCreateMatatable(l);
+    ref.pushCreateMetatable(l);
     return 1;
   }
 };
