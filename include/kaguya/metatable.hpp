@@ -109,14 +109,22 @@ inline int property_index_function(lua_State *L) {
       lua_call(L, 1, 1);
       return 1;
     }
+#if defined( KAGUYA_STRICT_PROPERTY_GET )
     else if( type == LUA_TNIL ) {
         luaL_error( L, "accessing unknown property %s.", strkey );
     }
+#else
+    // basically key push and table get will be nil, but
+    // we know that now, so push nil and return.
+    lua_pushnil(L);
+    return 1;
+#endif
   }
   lua_pushvalue(L, key);
   lua_gettable(L, metatable);
   return 1;
 }
+
 inline int property_newindex_function(lua_State *L) {
   // Lua
   // local arg = {...};local metatable = arg[1];

@@ -98,6 +98,13 @@ extern "C" {
 #define KAGUYA_USE_SHARED_LUAREF 0
 #endif
 
+// set to 1 to bail out with an error on access to unregistered
+// properties on get, so: if A.a{int} -> c = A.b results
+// in an error when set to 1. If set to 0, c will be nil.
+#ifndef KAGUYA_STRICT_PROPERTY_GET
+#define KAGUYA_STRICT_PROPERTY_GET 0
+#endif
+
 #ifndef KAGUYA_NOEXCEPT
 #if KAGUYA_USE_CPP11 && (!defined(_MSC_VER) || _MSC_VER >= 1900)
 #define KAGUYA_NOEXCEPT noexcept
