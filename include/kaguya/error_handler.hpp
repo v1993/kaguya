@@ -112,7 +112,7 @@ struct ErrorHandler {
       throw LuaErrorRunningError(status,
                                  message ? std::string(message)
                                          : "unknown error running error");
-#if LUA_VERSION_NUM >= 502
+#if LUA_VERSION_NUM >= 502 && LUA_VERSION_NUM < 504
     case LUA_ERRGCMM:
       throw LuaGCError(status,
                        message ? std::string(message) : "unknown gc error");

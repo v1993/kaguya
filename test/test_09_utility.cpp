@@ -47,8 +47,15 @@ KAGUYA_TEST_FUNCTION_DEF(lua_resume_test)(kaguya::State &s) {
   lua_State *co = t;
   lua_pushnumber(co, 2);
   lua_pushnumber(co, 3);
-
+  #if LUA_VERSION_NUM >= 504
+  // for this test, we assume that there is only one
+  // result, and its on stack top for this coroutine
+  // ie: ignore nvars
+  int nvars;
+  lua_resume(co, s.state(), 2, &nvars);
+  #else
   lua_resume(co, s.state(), 2);
+  #endif
 
   TEST_EQUAL(s["v"][1], 2);
   TEST_EQUAL(s["v"][2], 3);

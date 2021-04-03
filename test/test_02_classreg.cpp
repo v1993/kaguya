@@ -1,6 +1,7 @@
 #include "kaguya/kaguya.hpp"
 #include "test_util.hpp"
 
+
 namespace {
 struct SelfRefCounted {
   static int all_object_count; // for simple leak check
@@ -103,6 +104,8 @@ struct ABC {
     return kaguya::standard::shared_ptr<ABC>(new ABC(*this));
   }
 };
+
+static std::string last_error_message;
 
 KAGUYA_TEST_FUNCTION_DEF(default_constructor)(kaguya::State &state) {
   state["ABC"].setClass(
@@ -252,6 +255,14 @@ KAGUYA_TEST_FUNCTION_DEF(copy_constructor)(kaguya::State &state) {
   TEST_CHECK(shared_wrapper->native_get() != shared_wrapper->cget());
 }
 
+
+static int error_triggered = 0;
+void error_function(int status, const char *message) {
+  KAGUYA_UNUSED(status);
+  KAGUYA_UNUSED(message);
+  error_triggered = 1;
+}
+
 KAGUYA_TEST_FUNCTION_DEF(data_member_bind)(kaguya::State &state) {
 
   kaguya::LuaFunction f = state.loadstring("return 3,4");
@@ -275,6 +286,25 @@ KAGUYA_TEST_FUNCTION_DEF(data_member_bind)(kaguya::State &state) {
 
   TEST_CHECK(state("value:stringmember('test')"));
   TEST_CHECK(state("assert(value:stringmember() == 'test')"));
+
+  kaguya::standard::function<void(int statuscode, const char *message)> old;
+  old = kaguya::ErrorHandler::getHandler(state.state());
+  state.setErrorHandler( error_function );
+  // unregistered property access
+  TEST_CHECK(state("value.unregistered"));
+  TEST_CHECK( error_triggered == 1 );
+
+  // reset
+  error_triggered = 0;
+
+  // unregistered property assignments
+  TEST_CHECK(state("v = value.unregistered"));
+#if defined( KAGUYA_STRICT_PROPERTY_GET )
+  TEST_CHECK( error_triggered == 1 );
+#else
+  TEST_CHECK(state("assert(v==nil)"));
+#endif
+  state.setErrorHandler(old);
 }
 
 KAGUYA_TEST_FUNCTION_DEF(codechunkregtest)(kaguya::State &state) {
@@ -1082,7 +1112,7 @@ KAGUYA_TEST_FUNCTION_DEF(not_registered_object)(kaguya::State &) {
   TEST_CHECK(TestClass2_objectcount == 0);
 }
 
-std::string last_error_message;
+
 void ignore_error_fun(int status, const char *message) {
   KAGUYA_UNUSED(status);
   last_error_message = message ? message : "";

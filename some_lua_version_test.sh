@@ -1,13 +1,13 @@
 set -e
-build_test_versions=("lua-5.3.3" "lua-5.2.4" "lua-5.1.5")
-build_test_cxx_flags=("-std=c++03" "-std=c++11")
+build_test_versions=("lua-5.4.3" "lua-5.3.3" "lua-5.2.4" "lua-5.1.5")
+build_test_cxx_flags=("-std=c++03" "-std=c++11" "-Wfatal-errors" "-fPIC")
 
 build_and_exec_test(){
   if [ ! -e "build$2_$1" ]; then
     mkdir "build$2_$1"
   fi
   cd "build$2_$1"
-  cmake ../ -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_CXX_FLAGS=$2 -DLUA_SEARCH_LIB_NAME=$1 -DCOVERAGE=${TEST_COVERAGE}
+  cmake ../ -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_CXX_FLAGS=$2 -DLUA_SEARCH_LIB_NAME=$1 -DCOVERAGE=${TEST_COVERAGE} -DCMAKE_POSITION_INDEPENDENT_CODE=ON
   make -j4
   CTEST_OUTPUT_ON_FAILURE=1 make test
   cd ../

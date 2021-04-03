@@ -472,7 +472,12 @@ KAGUYA_TEST_FUNCTION_DEF(this_typemismatch_error_test)(kaguya::State &state) {
   }
 }
 
-#if LUA_VERSION_NUM >= 502
+#if LUA_VERSION_NUM >= 502 && LUA_VERSION_NUM < 504
+// in 5.4, errors during garbage collection are not propagated
+// anymore. They only generate a warning.
+// This test does not make sense for 5.4 and above.
+// Since we assume that Lua works as specified, this is a no-op
+// for kaguya (kaguya does not raise the exception anymore).
 KAGUYA_TEST_FUNCTION_DEF(gc_error_throw_test)(kaguya::State &) {
   bool catch_except = false;
   try {

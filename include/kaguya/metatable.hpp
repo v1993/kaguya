@@ -84,7 +84,7 @@ typedef std::map<std::string, AnyDataPusher> MemberMapType;
 inline bool is_property_key(const char *keyname) {
   return keyname &&
          strncmp(keyname, KAGUYA_PROPERTY_PREFIX,
-                 sizeof(KAGUYA_PROPERTY_PREFIX) - 1) != 0;
+                 sizeof(KAGUYA_PROPERTY_PREFIX) - 1) == 0;
 }
 inline int property_index_function(lua_State *L) {
   // Lua
@@ -101,7 +101,7 @@ inline int property_index_function(lua_State *L) {
   static const int metatable = lua_upvalueindex(1);
   const char *strkey = lua_tostring(L, key);
 
-  if (lua_type(L, 1) == LUA_TUSERDATA && is_property_key(strkey)) {
+  if (lua_type(L, 1) == LUA_TUSERDATA ) {
     int type = lua_getfield_rtype(
         L, metatable, (KAGUYA_PROPERTY_PREFIX + std::string(strkey)).c_str());
     if (type == LUA_TFUNCTION) {
@@ -110,10 +110,12 @@ inline int property_index_function(lua_State *L) {
       return 1;
     }
   }
+
   lua_pushvalue(L, key);
   lua_gettable(L, metatable);
   return 1;
 }
+
 inline int property_newindex_function(lua_State *L) {
   // Lua
   // local arg = {...};local metatable = arg[1];
@@ -330,7 +332,7 @@ public:
     lua_settop(state, metatable_index);
     return true;
   }
-  LuaTable createMatatable(lua_State *state) const {
+  LuaTable createMetatable(lua_State *state) const {
     util::ScopedSavedStack save(state);
     if (!pushCreateMetatable(state)) {
       return LuaTable();
