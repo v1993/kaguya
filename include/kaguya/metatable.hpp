@@ -134,20 +134,17 @@ inline int property_newindex_function(lua_State *L) {
   static const int metatable = lua_upvalueindex(1);
   const char *strkey = lua_tostring(L, 2);
 
-  if (lua_type(L, 1) == LUA_TUSERDATA ) {
-      if( !is_property_key(strkey)) {
-        int type = lua_getfield_rtype(
-            L, metatable, (KAGUYA_PROPERTY_PREFIX + std::string(strkey)).c_str());
-        if (type == LUA_TFUNCTION) {
-          lua_pushvalue(L, table);
-          lua_pushvalue(L, value);
-          lua_call(L, 2, 0);
-          return 0;
-        }
-        else if( type == LUA_TNIL ){
-            luaL_error( L, "accessing unknown property %s.", strkey );
-        }
-      }
+  if (lua_type(L, 1) == LUA_TUSERDATA && is_property_key(strkey)) {
+    int type = lua_getfield_rtype(
+        L, metatable, (KAGUYA_PROPERTY_PREFIX + std::string(strkey)).c_str());
+    if (type == LUA_TFUNCTION) {
+      lua_pushvalue(L, table);
+      lua_pushvalue(L, value);
+      lua_call(L, 2, 0);
+      return 0;
+    } else if (type == LUA_TNIL) {
+      return luaL_error(L, "setting unknown property (%s) to userdata.", strkey);
+    }
   }
   lua_pushvalue(L, key);
   lua_pushvalue(L, value);
