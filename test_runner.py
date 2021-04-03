@@ -10,8 +10,8 @@ boost_dir=os.environ.get("BOOST_PATH")
 if not boost_dir:
     boost_dir='D:\\boost_1_60_0'
 
-lua_versions = ["lua-5.3.3","lua-5.2.4","lua-5.1.5","luajit"]
-maijor_test_lua_versions = ["lua-5.3.3"]
+lua_versions = ["lua-5.4.3", "lua-5.3.3","lua-5.2.4","lua-5.1.5","luajit"]
+maijor_test_lua_versions = ["lua-5.4.3"]
 
 test_msvc_vers = [("msvc2015","Visual Studio 14 2015","",True)
     ,("msvc2015win64","Visual Studio 14 2015 Win64","",True)

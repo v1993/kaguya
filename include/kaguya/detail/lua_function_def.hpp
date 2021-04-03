@@ -162,14 +162,58 @@ public:
     if (argnum < 0) {
       argnum = 0;
     }
+#if LUA_VERSION_NUM >= 504
+    // lua 5.4 adds an additional out argument here
+    // it shows the number of returned values from the co-routine
+    // fetch only returned results from stack top on resume now
+    int nvars = 1;
+    int result = lua_resume(thread, state, argnum, &nvars);
+    except::checkErrorAndThrow(result, thread);
+    return detail::FunctionResultProxy::ReturnValue(thread, result, lua_gettop(thread)-nvars+1,
+                                                        types::typetag<Result>());
+#else
     int result = lua_resume(thread, state, argnum);
     except::checkErrorAndThrow(result, thread);
     return detail::FunctionResultProxy::ReturnValue(thread, result, 1,
-                                                    types::typetag<Result>());
+                                                        types::typetag<Result>());
+#endif
   }
   template <class... Args> FunctionResults operator()(Args &&... args);
 #else
 
+#if LUA_VERSION_NUM >= 504
+#define KAGUYA_RESUME_DEF(N)                                                   \
+  template <class Result KAGUYA_PP_TEMPLATE_DEF_REPEAT_CONCAT(N)>              \
+  Result resume(KAGUYA_PP_ARG_CR_DEF_REPEAT(N)) {                              \
+    lua_State *state = state_();                                               \
+    if (!state) {                                                              \
+      except::typeMismatchError(state, "attempt to call nil value");           \
+      return Result();                                                         \
+    }                                                                          \
+    util::ScopedSavedStack save(state);                                        \
+    int corStackIndex = pushStackIndex_(state);                                \
+    lua_State *thread = lua_tothread(state, corStackIndex);                    \
+    if (!thread) {                                                             \
+      except::typeMismatchError(state, "not thread");                          \
+      return Result();                                                         \
+    }                                                                          \
+    int argstart = 1;                                                          \
+    if (lua_status(thread) == LUA_YIELD) {                                     \
+      argstart = 0;                                                            \
+    }                                                                          \
+    util::push_args(thread KAGUYA_PP_ARG_REPEAT_CONCAT(N));                    \
+    int argnum = lua_gettop(thread) - argstart;                                \
+    if (argnum < 0) {                                                          \
+      argnum = 0;                                                              \
+    }                                                                          \
+    int nvars;                                                                 \
+    int result = lua_resume(thread, state, argnum,&nvars);                     \
+    except::checkErrorAndThrow(result, thread);                                \
+    return detail::FunctionResultProxy::ReturnValue(thread, result,            \
+                                                    lua_gettop(thread)-nvars+1,\
+                                                    types::typetag<Result>()); \
+  }
+#else
 #define KAGUYA_RESUME_DEF(N)                                                   \
   template <class Result KAGUYA_PP_TEMPLATE_DEF_REPEAT_CONCAT(N)>              \
   Result resume(KAGUYA_PP_ARG_CR_DEF_REPEAT(N)) {                              \
@@ -199,6 +243,7 @@ public:
     return detail::FunctionResultProxy::ReturnValue(thread, result, 1,         \
                                                     types::typetag<Result>()); \
   }
+#endif // LUA_VERSION_NUM >= 504
 
   KAGUYA_RESUME_DEF(0)
   KAGUYA_PP_REPEAT_DEF(KAGUYA_FUNCTION_MAX_ARGS, KAGUYA_RESUME_DEF)

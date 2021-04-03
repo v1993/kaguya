@@ -235,7 +235,15 @@ int cfunction(lua_State *L) {
 
 int coroutinefn(lua_State *cor) {
   using namespace kaguya;
-  lua_resume(cor, 0, 0);
+  #if LUA_VERSION_NUM >= 504
+  // for this test, we assume that there is only one
+  // result, and its on stack top for this coroutine
+  // ie ignore nvars
+  int nvars;
+  lua_resume(cor, 0, 0, &nvars);
+  #else
+  lua_resume(cor, 0, 0 );
+  #endif
   return static_cast<int>(lua_tointeger(cor, 1));
 }
 
